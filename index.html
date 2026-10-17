@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbits & Origins | Nati's Space Blog</title>
+  <meta name="description" content="Personal study notes on astrophysics, orbital mechanics, and mathematics by Nati.">
+  
+  <link rel="stylesheet" href="style.css">
+
+  <!-- MathJax for math equations -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+
+  <!-- Supabase CDN Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header>
+    <div class="site-header">
+      <div class="site-title">
+        <a href="#" onclick="document.querySelector('[data-tab=\'articles\']').click(); return false;">Orbits &amp; Origins</a>
+      </div>
+      <nav>
+        <ul id="nav-list">
+          <li><button class="nav-link active" data-tab="articles">Journal</button></li>
+          <li><button class="nav-link" data-tab="about">About</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="intro-section">
+      <h1>Orbits &amp; Origins</h1>
+      <p class="intro-desc">A high school student's quantitative notes on astrophysics and mathematics.</p>
+      <p class="intro-meta">Author: Nati &bull; Location: New Zealand</p>
+    </section>
+
+    <!-- TAB 1: ARTICLES -->
+    <div id="articles-tab" class="tab-content active">
+      <div id="articles-feed-view">
+        <!-- Dynamically rendered articles -->
+      </div>
+
+      <div id="article-full-view" class="article-reader">
+        <!-- Dynamically rendered full article -->
+      </div>
+    </div>
+
+    <!-- TAB 2: ABOUT -->
+    <div id="about-tab" class="tab-content">
+      <div class="about-section">
+        <h2>About Me</h2>
+        <p>Hi, I'm Nati. I'm a high school student living in New Zealand with a strong interest in astrophysics, exoplanets, and aerospace.</p>
+        <p>This blog serves as my digital notebook where I sit down with my textbook, calculator, and pencil to work out the actual physics behind astronomical phenomena from scratch.</p>
+        <p>Rather than just reading summaries, I try to calculate things like orbital periods, distances, velocities, and stellar flux using the mechanics and calculus I learn in school.</p>
+
+        <h3>Timeline &amp; Studies</h3>
+        <ul class="simple-timeline">
+          <li>
+            <strong>2024 &ndash; Present: High School Physics &amp; Calculus</strong>
+            <br>Studying classical mechanics, gravitation, and differential calculus.
+          </li>
+          <li>
+            <strong>2026: Started Orbits &amp; Origins</strong>
+            <br>Documenting my orbital modeling attempts and handwritten problem-solving online.
+          </li>
+          <li>
+            <strong>Future Goals: University Studies</strong>
+            <br>Planning to study Astrophysics and Aerospace Engineering at university.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SECRET TAB 3: ADMIN CMS -->
+    <div id="admin-tab" class="tab-content" style="display: none;">
+      
+      <!-- Password Gate -->
+      <div id="admin-auth-gate" class="simple-box auth-box">
+        <h2>Admin Login</h2>
+        <p>Enter passcode to access publishing dashboard:</p>
+        
+        <form id="admin-login-form" onsubmit="event.preventDefault();">
+          <input type="password" id="admin-password-input" placeholder="Passcode" class="input-field">
+          <button type="submit" class="simple-btn">Unlock</button>
+        </form>
+        <p id="auth-error-msg" style="color: red; font-size: 0.9rem; margin-top: 10px; display: none;">Invalid Passcode</p>
+      </div>
+
+      <!-- Dashboard View -->
+      <div id="admin-dashboard-view" style="display: none;">
+        <div class="dashboard-header">
+          <h2>Publishing Dashboard</h2>
+          <button id="admin-logout-btn" class="simple-btn">Log Out</button>
+        </div>
+
+        <div class="dashboard-grid">
+          
+          <div class="post-form-area">
+            <h3>New Post</h3>
+            <form id="cms-publish-form">
+              <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="cms-title" required class="input-field" placeholder="Post title">
+              </div>
+
+              <div class="form-group">
+                <label>URL Slug</label>
+                <input type="text" id="cms-id" required class="input-field" placeholder="e.g. kepler-186f">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Category</label>
+                  <input type="text" id="cms-category" required class="input-field" placeholder="e.g. Astrophysics">
+                </div>
+                <div class="form-group">
+                  <label>Read Time</label>
+                  <input type="text" id="cms-read-time" required class="input-field" placeholder="e.g. 5 min">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Excerpt / Summary</label>
+                <textarea id="cms-excerpt" required rows="2" class="input-field" placeholder="Short 1-2 sentence summary"></textarea>
+              </div>
+
+              <div class="form-group">
+                <div class="helper-buttons">
+                  <label style="margin: 0;">Content</label>
+                  <div>
+                    <button type="button" onclick="insertTemplate('p')" class="small-btn">+ Paragraph</button>
+                    <button type="button" onclick="insertTemplate('h3')" class="small-btn">+ Header</button>
+                    <button type="button" onclick="insertTemplate('math')" class="small-btn">+ Math Block</button>
+                  </div>
+                </div>
+                <textarea id="cms-content" required rows="10" class="input-field monospace" placeholder="Write post content (HTML and MathJax allowed)..."></textarea>
+              </div>
+
+              <button type="submit" class="simple-btn primary-btn">Publish Post</button>
+            </form>
+          </div>
+
+          <div class="manage-posts-area">
+            <h3>Published Posts</h3>
+            <div id="cms-article-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="container footer-content">
+      <p>&copy; 2026 Nati &bull; Orbits &amp; Origins</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
