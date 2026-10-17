@@ -458,37 +458,187 @@ function renderCMSArticleList() {
   });
 }
 
-// Publish/Insert Article Record
+// Publish/Insert Article Record from Raw Memo or Advanced Form
 async function setupCMSPublishForm() {
   const form = document.getElementById('cms-publish-form');
   if (!form) return;
 
-  // Set default URL slug helper on title typing
+  const rawNoteInput = document.getElementById('cms-raw-note');
+  const fileInput = document.getElementById('memo-file-input');
+  const dropzone = document.getElementById('memo-dropzone');
+  const previewBar = document.getElementById('memo-preview-bar');
+  const titleDisplay = document.getElementById('detected-title-display');
+  const readTimeDisplay = document.getElementById('detected-readtime-display');
+
   const titleInput = document.getElementById('cms-title');
   const idInput = document.getElementById('cms-id');
-  if (titleInput && idInput) {
-    titleInput.addEventListener('input', () => {
-      if (!idInput.dataset.edited) {
-        idInput.value = titleInput.value
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '');
+  const categoryInput = document.getElementById('cms-category');
+  const readTimeInput = document.getElementById('cms-read-time');
+  const excerptInput = document.getElementById('cms-excerpt');
+
+  // Helper: Parse memo text into structured parts
+  function parseMemoText(text) {
+    if (!text || !text.trim()) {
+      if (previewBar) previewBar.style.display = 'none';
+      return;
+    }
+
+    const lines = text.split('\n');
+    let title = "";
+    let bodyStartIndex = 0;
+
+    // Find first non-empty line as title
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        title = lines[i].trim().replace(/^#+\s*/, ''); // strip leading # if markdown
+        bodyStartIndex = i + 1;
+        break;
       }
-    });
-    idInput.addEventListener('input', () => {
-      idInput.dataset.edited = "true";
+    }
+
+    const bodyLines = lines.slice(bodyStartIndex);
+    const bodyText = bodyLines.join('\n').trim();
+
+    // Auto-calculate read time (roughly 180 words or 350 chars per min)
+    const wordCount = text.trim().split(/\s+/).length;
+    const minutes = Math.max(1, Math.round(wordCount / 160));
+    const readTime = `${minutes} min`;
+
+    // Auto-generate excerpt (first 140 chars of body)
+    const excerpt = bodyText.replace(/[\n\r]+/g, ' ').substring(0, 140) + (bodyText.length > 140 ? '...' : '');
+
+    // Auto-generate slug
+    let slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!slug) {
+      slug = 'note-' + Date.now().toString(36);
+    }
+
+    // Update UI & Hidden Fields
+    if (titleInput && !titleInput.dataset.edited) titleInput.value = title || "My Space Note";
+    if (idInput && !idInput.dataset.edited) idInput.value = slug;
+    if (readTimeInput && !readTimeInput.dataset.edited) readTimeInput.value = readTime;
+    if (excerptInput && !excerptInput.dataset.edited) excerptInput.value = excerpt || "A study note from Nati's Space Lab.";
+    if (categoryInput && !categoryInput.value) categoryInput.value = "Space Notes";
+
+    if (titleDisplay) titleDisplay.textContent = title || "(1行目を入力してください)";
+    if (readTimeDisplay) readTimeDisplay.textContent = readTime;
+    if (previewBar) previewBar.style.display = 'block';
+  }
+
+  // Handle Raw Text Typing / Pasting
+  if (rawNoteInput) {
+    rawNoteInput.addEventListener('input', () => {
+      parseMemoText(rawNoteInput.value);
     });
   }
 
+  // Handle File Upload (.txt)
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        rawNoteInput.value = event.target.result;
+        parseMemoText(rawNoteInput.value);
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // Drag and drop onto textarea or dropzone
+  [rawNoteInput, dropzone].forEach(el => {
+    if (!el) return;
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      el.style.borderColor = '#111';
+    });
+    el.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      el.style.borderColor = '';
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.style.borderColor = '';
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          rawNoteInput.value = event.target.result;
+          parseMemoText(rawNoteInput.value);
+        };
+        reader.readAsText(file);
+      }
+    });
+  });
+
+  // Track if user manually edited advanced fields
+  [titleInput, idInput, readTimeInput, excerptInput].forEach(inp => {
+    if (inp) inp.addEventListener('input', () => { inp.dataset.edited = "true"; });
+  });
+
+  // Format raw text to clean HTML paragraphs
+  function formatRawToHtml(text) {
+    // If it already has HTML tags like <p> or <h3>, keep it
+    if (/<p>|<h[1-6]>|<div/i.test(text)) {
+      return text;
+    }
+
+    // Split text into lines, exclude the first title line
+    const lines = text.split('\n');
+    let bodyStartIndex = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        bodyStartIndex = i + 1;
+        break;
+      }
+    }
+
+    const bodyText = lines.slice(bodyStartIndex).join('\n').trim();
+    if (!bodyText) {
+      return `<p>${escapeHtml(text)}</p>`;
+    }
+
+    // Split by double newlines into paragraphs
+    const paragraphs = bodyText.split(/\n\s*\n/);
+    return paragraphs.map(p => {
+      const cleanP = p.trim();
+      // If it's a math block, preserve as is
+      if (cleanP.startsWith('\\[') || cleanP.startsWith('$$') || cleanP.startsWith('<div class="math-block"')) {
+        return cleanP;
+      }
+      return `<p>${escapeHtml(cleanP).replace(/\n/g, '<br>')}</p>`;
+    }).join('\n');
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // Handle Form Submit
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const title = document.getElementById('cms-title').value;
-    const id = idInput.value;
-    const category = document.getElementById('cms-category').value;
-    const readTime = document.getElementById('cms-read-time').value;
-    const excerpt = document.getElementById('cms-excerpt').value;
-    const content = document.getElementById('cms-content').value;
+    const rawNote = rawNoteInput.value.trim();
+    if (!rawNote && !titleInput.value) {
+      alert("メモ帳の内容を貼り付けるか、ファイルを選択してください！");
+      return;
+    }
+
+    // Parse memo if not already parsed
+    parseMemoText(rawNote);
+
+    const title = titleInput.value || "Untitled Space Note";
+    const id = idInput.value || ('note-' + Date.now().toString(36));
+    const category = categoryInput.value || "Space Notes";
+    const readTime = readTimeInput.value || "2 min";
+    const excerpt = excerptInput.value || "A study note from Nati's Space Lab.";
+    
+    // Auto format content to HTML paragraphs
+    const content = formatRawToHtml(rawNote);
 
     const options = { month: 'long', day: 'numeric', year: 'numeric' };
     const dateFormatted = new Date().toLocaleDateString('en-US', options);
@@ -508,9 +658,12 @@ async function setupCMSPublishForm() {
 
     // Reset Form
     form.reset();
-    idInput.removeAttribute('data-edited');
+    [titleInput, idInput, readTimeInput, excerptInput].forEach(inp => {
+      if (inp) inp.removeAttribute('data-edited');
+    });
+    if (previewBar) previewBar.style.display = 'none';
 
-    alert("Article successfully published to the database!");
+    alert("🎉 記事をブログに公開しました！");
     
     // Switch back to articles tab to view it
     document.querySelector('[data-tab="articles"]').click();

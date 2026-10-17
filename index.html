@@ -99,47 +99,75 @@
         <div class="dashboard-grid">
           
           <div class="post-form-area">
-            <h3>New Post</h3>
+            <h3>New Post from Memo</h3>
             <form id="cms-publish-form">
-              <div class="form-group">
-                <label>Title</label>
-                <input type="text" id="cms-title" required class="input-field" placeholder="Post title">
+              
+              <!-- File Upload Button -->
+              <div class="form-group memo-dropzone" id="memo-dropzone">
+                <input type="file" id="memo-file-input" accept=".txt,.text,.md" style="display: none;">
+                <button type="button" class="simple-btn" onclick="document.getElementById('memo-file-input').click();">
+                  📄 メモ帳ファイル（.txt）を選択して読み込む
+                </button>
+                <span style="font-size: 0.8rem; color: #888; margin-left: 8px;">またはファイルをここにドロップ</span>
               </div>
 
+              <!-- Big single memo text area -->
               <div class="form-group">
-                <label>URL Slug</label>
-                <input type="text" id="cms-id" required class="input-field" placeholder="e.g. kepler-186f">
+                <label>メモ帳の内容（直接貼り付けてもOK）</label>
+                <textarea id="cms-raw-note" rows="12" class="input-field" placeholder="【書き方は超シンプル！】
+・1行目にタイトルを書く
+・2行目から、口でわーっと喋った考えをそのまま書く！
+・段落を分けたいときは、1行あけるだけ。
+
+例：
+火星でジャンプしたら何メートル跳べるか計算してみた
+
+今日、物理の授業で力学的エネルギー保存の法則を習った。
+先生は普通の振り子の話をしてたけど、私は「これ火星だったらどうなるんだろ？」って気になった。
+
+火星の重力は地球の0.38倍だから..."></textarea>
               </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Category</label>
-                  <input type="text" id="cms-category" required class="input-field" placeholder="e.g. Astrophysics">
+              <!-- Detected Title / Info Preview -->
+              <div id="memo-preview-bar" class="memo-preview-box" style="display: none;">
+                <div><strong>タイトル:</strong> <span id="detected-title-display">-</span></div>
+                <div style="font-size: 0.8rem; color: #666; margin-top: 4px;">
+                  読む時間: <span id="detected-readtime-display">1 min</span> &bull; あらすじは自動生成されます
                 </div>
-                <div class="form-group">
-                  <label>Read Time</label>
-                  <input type="text" id="cms-read-time" required class="input-field" placeholder="e.g. 5 min">
-                </div>
               </div>
 
-              <div class="form-group">
-                <label>Excerpt / Summary</label>
-                <textarea id="cms-excerpt" required rows="2" class="input-field" placeholder="Short 1-2 sentence summary"></textarea>
-              </div>
-
-              <div class="form-group">
-                <div class="helper-buttons">
-                  <label style="margin: 0;">Content</label>
-                  <div>
-                    <button type="button" onclick="insertTemplate('p')" class="small-btn">+ Paragraph</button>
-                    <button type="button" onclick="insertTemplate('h3')" class="small-btn">+ Header</button>
-                    <button type="button" onclick="insertTemplate('math')" class="small-btn">+ Math Block</button>
+              <!-- Advanced options (folded, usually don't need to touch) -->
+              <details style="margin-bottom: 15px; font-size: 0.85rem; color: #666;">
+                <summary style="cursor: pointer; margin-bottom: 8px;">▼ こだわり設定（普段は触らなくてOK）</summary>
+                <div style="padding-top: 8px;">
+                  <div class="form-group">
+                    <label>タイトル（手動で変えたい時）</label>
+                    <input type="text" id="cms-title" class="input-field">
+                  </div>
+                  <div class="form-group">
+                    <label>URL Slug</label>
+                    <input type="text" id="cms-id" class="input-field">
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>カテゴリ</label>
+                      <input type="text" id="cms-category" class="input-field" value="Space Notes">
+                    </div>
+                    <div class="form-group">
+                      <label>読む時間</label>
+                      <input type="text" id="cms-read-time" class="input-field" value="3 min">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>あらすじ</label>
+                    <textarea id="cms-excerpt" rows="2" class="input-field"></textarea>
                   </div>
                 </div>
-                <textarea id="cms-content" required rows="10" class="input-field monospace" placeholder="Write post content (HTML and MathJax allowed)..."></textarea>
-              </div>
+              </details>
 
-              <button type="submit" class="simple-btn primary-btn">Publish Post</button>
+              <button type="submit" class="simple-btn primary-btn" style="width: 100%; padding: 12px; font-size: 1rem;">
+                🚀 このメモをブログに公開する！
+              </button>
             </form>
           </div>
 

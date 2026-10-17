@@ -455,15 +455,22 @@ nav ul {
   color: #ffffff;
 }
 
-/* Footer */
-footer {
-  margin-top: 60px;
-  border-top: 1px solid #eeeeee;
-  padding: 25px 0;
+/* Memo Upload & Preview */
+.memo-dropzone {
+  border: 1px dashed #cccccc;
+  border-radius: 4px;
+  padding: 12px;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
-.footer-content {
-  font-size: 0.85rem;
-  color: #888888;
-  text-align: center;
+.memo-preview-box {
+  background: #f5f5f5;
+  border-left: 3px solid #222222;
+  padding: 10px 14px;
+  border-radius: 3px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
 }
