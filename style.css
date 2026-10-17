@@ -474,3 +474,81 @@ nav ul {
   margin-bottom: 15px;
   font-size: 0.9rem;
 }
+
+/* Multi-Drafts Manager */
+.drafts-manager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eeeeee;
+  overflow-x: auto;
+}
+
+.drafts-tabs-scroll {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.draft-tab {
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 3px;
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  color: #444444;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 150px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.draft-tab:hover {
+  background-color: #f5f5f5;
+}
+
+.draft-tab.active {
+  background-color: #222222;
+  color: #ffffff;
+  border-color: #222222;
+  font-weight: 600;
+}
+
+.btn-new-draft {
+  white-space: nowrap;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  background-color: #f9f9f9;
+}
+
+.draft-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 0.8rem;
+}
+
+.autosave-tag {
+  color: #2e7d32;
+  font-size: 0.8rem;
+}
+
+.delete-draft-link {
+  background: none;
+  border: none;
+  color: #999999;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.delete-draft-link:hover {
+  color: #cc0000;
+}

@@ -476,6 +476,165 @@ async function setupCMSPublishForm() {
   const readTimeInput = document.getElementById('cms-read-time');
   const excerptInput = document.getElementById('cms-excerpt');
 
+  const draftsTabsList = document.getElementById('drafts-tabs-list');
+  const addDraftBtn = document.getElementById('btn-add-draft');
+  const deleteDraftBtn = document.getElementById('btn-delete-current-draft');
+  const autosaveStatus = document.getElementById('draft-autosave-status');
+
+  // === MULTI-DRAFT AUTO-SAVE ENGINE ===
+  const DRAFTS_KEY = 'nati_space_multidrafts_v2';
+  let drafts = [];
+  let activeDraftId = null;
+
+  function loadDraftsData() {
+    try {
+      const saved = localStorage.getItem(DRAFTS_KEY);
+      if (saved) drafts = JSON.parse(saved);
+    } catch (e) {
+      console.error("Could not load drafts", e);
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramDraftId = urlParams.get('draft');
+
+    if (!Array.isArray(drafts) || drafts.length === 0) {
+      const initId = 'draft-' + Date.now();
+      drafts = [{ id: initId, title: '新しい下書き 1', content: '', updatedAt: Date.now() }];
+      activeDraftId = initId;
+      saveDraftsData();
+    } else {
+      if (paramDraftId && drafts.some(d => d.id === paramDraftId)) {
+        activeDraftId = paramDraftId;
+      } else {
+        activeDraftId = drafts[0].id;
+      }
+    }
+  }
+
+  function saveDraftsData() {
+    try {
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+    } catch (e) {
+      console.error("Could not save drafts", e);
+    }
+  }
+
+  function renderDraftTabsUI() {
+    if (!draftsTabsList) return;
+    draftsTabsList.innerHTML = drafts.map(d => {
+      const isActive = d.id === activeDraftId;
+      const displayTitle = (d.title && d.title.trim()) ? d.title.substring(0, 15) : '無題の下書き';
+      return `
+        <a href="?admin=true&draft=${d.id}" class="draft-tab ${isActive ? 'active' : ''}" data-draft-id="${d.id}" title="${d.title || '無題'} (右クリックで別タブで開く)">
+          ${displayTitle}
+        </a>
+      `;
+    }).join('');
+
+    // Attach click handlers (switch draft in place on normal click)
+    draftsTabsList.querySelectorAll('.draft-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        // If normal left click without modifier keys, switch in place
+        if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+          e.preventDefault();
+          const targetId = tab.getAttribute('data-draft-id');
+          switchActiveDraft(targetId);
+        }
+      });
+    });
+  }
+
+  function switchActiveDraft(draftId) {
+    // Save current active draft text first
+    saveCurrentDraftText();
+
+    const target = drafts.find(d => d.id === draftId);
+    if (!target) return;
+
+    activeDraftId = draftId;
+
+    // Update URL query param without full reload
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('admin', 'true');
+    currentUrl.searchParams.set('draft', draftId);
+    window.history.replaceState({}, '', currentUrl);
+
+    // Populate textarea with draft content
+    if (rawNoteInput) {
+      rawNoteInput.value = target.content || '';
+      parseMemoText(rawNoteInput.value);
+    }
+
+    renderDraftTabsUI();
+    updateAutosaveTimestamp();
+  }
+
+  function saveCurrentDraftText() {
+    const cur = drafts.find(d => d.id === activeDraftId);
+    if (!cur || !rawNoteInput) return;
+
+    cur.content = rawNoteInput.value;
+    cur.updatedAt = Date.now();
+
+    // Derive title from 1st non-empty line
+    const lines = rawNoteInput.value.split('\n');
+    let foundTitle = "";
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        foundTitle = lines[i].trim().replace(/^#+\s*/, '');
+        break;
+      }
+    }
+    cur.title = foundTitle || '無題の下書き';
+
+    saveDraftsData();
+    renderDraftTabsUI();
+  }
+
+  function updateAutosaveTimestamp() {
+    if (!autosaveStatus) return;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    autosaveStatus.innerHTML = `🟢 自動保存済み (${timeStr})`;
+  }
+
+  // Handle New Draft Button
+  if (addDraftBtn) {
+    addDraftBtn.addEventListener('click', () => {
+      saveCurrentDraftText();
+      const newId = 'draft-' + Date.now();
+      const newDraftNum = drafts.length + 1;
+      drafts.push({
+        id: newId,
+        title: `新しい下書き ${newDraftNum}`,
+        content: '',
+        updatedAt: Date.now()
+      });
+      saveDraftsData();
+      switchActiveDraft(newId);
+    });
+  }
+
+  // Handle Delete Draft Button
+  if (deleteDraftBtn) {
+    deleteDraftBtn.addEventListener('click', () => {
+      const cur = drafts.find(d => d.id === activeDraftId);
+      const draftName = cur ? cur.title : 'この下書き';
+      if (confirm(`「${draftName}」を削除してもよろしいですか？`)) {
+        drafts = drafts.filter(d => d.id !== activeDraftId);
+        if (drafts.length === 0) {
+          const initId = 'draft-' + Date.now();
+          drafts = [{ id: initId, title: '新しい下書き 1', content: '', updatedAt: Date.now() }];
+          activeDraftId = initId;
+        } else {
+          activeDraftId = drafts[0].id;
+        }
+        saveDraftsData();
+        switchActiveDraft(activeDraftId);
+      }
+    });
+  }
+
   // Helper: Parse memo text into structured parts
   function parseMemoText(text) {
     if (!text || !text.trim()) {
@@ -525,10 +684,12 @@ async function setupCMSPublishForm() {
     if (previewBar) previewBar.style.display = 'block';
   }
 
-  // Handle Raw Text Typing / Pasting
+  // Handle Raw Text Typing / Pasting with Real-Time Auto-Save
   if (rawNoteInput) {
     rawNoteInput.addEventListener('input', () => {
       parseMemoText(rawNoteInput.value);
+      saveCurrentDraftText();
+      updateAutosaveTimestamp();
     });
   }
 
@@ -541,6 +702,8 @@ async function setupCMSPublishForm() {
       reader.onload = (event) => {
         rawNoteInput.value = event.target.result;
         parseMemoText(rawNoteInput.value);
+        saveCurrentDraftText();
+        updateAutosaveTimestamp();
       };
       reader.readAsText(file);
     });
@@ -566,6 +729,8 @@ async function setupCMSPublishForm() {
         reader.onload = (event) => {
           rawNoteInput.value = event.target.result;
           parseMemoText(rawNoteInput.value);
+          saveCurrentDraftText();
+          updateAutosaveTimestamp();
         };
         reader.readAsText(file);
       }
@@ -618,7 +783,7 @@ async function setupCMSPublishForm() {
       .replace(/>/g, '&gt;');
   }
 
-  // Handle Form Submit
+  // Handle Form Submit (Publish)
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -653,8 +818,19 @@ async function setupCMSPublishForm() {
       date: dateFormatted
     };
 
-    // Save record
+    // Save record to database
     await saveArticleRecord(newArticle);
+
+    // Published successfully! Remove current draft from draft list
+    drafts = drafts.filter(d => d.id !== activeDraftId);
+    if (drafts.length === 0) {
+      const initId = 'draft-' + Date.now();
+      drafts = [{ id: initId, title: '新しい下書き 1', content: '', updatedAt: Date.now() }];
+      activeDraftId = initId;
+    } else {
+      activeDraftId = drafts[0].id;
+    }
+    saveDraftsData();
 
     // Reset Form
     form.reset();
@@ -663,11 +839,19 @@ async function setupCMSPublishForm() {
     });
     if (previewBar) previewBar.style.display = 'none';
 
-    alert("🎉 記事をブログに公開しました！");
+    // Switch to active draft and render UI
+    switchActiveDraft(activeDraftId);
+
+    alert("🎉 記事をブログに公開しました！下書きから公開リストへ移動しました。");
     
     // Switch back to articles tab to view it
     document.querySelector('[data-tab="articles"]').click();
   });
+
+  // Initialize drafts on startup
+  loadDraftsData();
+  renderDraftTabsUI();
+  switchActiveDraft(activeDraftId);
 }
 
 // Core Database Save Logic (Supabase Upsert or localStorage Fallback)

@@ -99,7 +99,24 @@
         <div class="dashboard-grid">
           
           <div class="post-form-area">
-            <h3>New Post from Memo</h3>
+            <h3>Editor &amp; Drafts</h3>
+            
+            <!-- Multi-Draft Tabs Bar (Work on multiple articles simultaneously) -->
+            <div class="drafts-manager">
+              <div class="drafts-tabs-scroll" id="drafts-tabs-list">
+                <!-- Dynamically populated: [Draft 1] [Draft 2] -->
+              </div>
+              <button type="button" class="small-btn btn-new-draft" id="btn-add-draft">+ 新しい下書き</button>
+            </div>
+
+            <!-- Auto-save status and delete draft -->
+            <div class="draft-status-row">
+              <span id="draft-autosave-status" class="autosave-tag">🟢 自動保存済み</span>
+              <button type="button" id="btn-delete-current-draft" class="delete-draft-link">
+                &times; この下書きを削除
+              </button>
+            </div>
+
             <form id="cms-publish-form">
               
               <!-- File Upload Button -->
