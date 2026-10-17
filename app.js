@@ -1,8 +1,8 @@
 // === SUPABASE CLOUD CONFIGURATION ===
 // Paste your Supabase project credentials here to go live on the cloud database!
 // If left blank, the system automatically runs on a secure browser LocalStorage database fallback.
-const SUPABASE_URL = "https://glncnyfnedkcfrulfixt.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_SbqUZI51XaRNCJGgOpTBdQ_nTADgogS";
+const SUPABASE_URL = "https://wgbqrbciydwkwdvxpqrg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_4GydGLQ74EBJN8WLDPZGSg_jv-uznYr";
 
 let supabaseClient = null;
 
